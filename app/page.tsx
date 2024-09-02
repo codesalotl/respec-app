@@ -1,12 +1,13 @@
 // respec-app\app\page.tsx
 
-import AudioProcessor from '@/app/components/AudioProcessor';
+import ResultsPage from '@/app/components/results-page';
 
-export default function HomePage() {
+export default function Home() {
     return (
         <main>
-            <h1>Audio to Mel Spectrogram</h1>
-            <AudioProcessor />
+            <h1>Hello World</h1>
+            <br />
+            <ResultsPage />
         </main>
     );
 }
