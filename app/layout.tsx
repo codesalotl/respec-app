@@ -5,7 +5,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-import AudioInput from "@/components/audio-input"; // audio-input
+import { AudioProvider } from "@/components/audio-context";
+import AudioInput from "@/components/audio-input";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,10 +29,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AudioInput />
-          <div className="relative z-10 mt-96">
-            <div className="h-[200vh] bg-background p-5">{children}</div>
-          </div>
+          <AudioProvider>
+            <AudioInput />
+            <div className="relative z-10 mt-[50vh] min-h-[100vh] p-5 bg-background">
+              {children}
+            </div>
+          </AudioProvider>
         </ThemeProvider>
       </body>
     </html>

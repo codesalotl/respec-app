@@ -6,7 +6,8 @@ export default function Home() {
   return (
     <main>
       {/* <ResultsPage /> */}
-      No Results Yet
+      <h1>Home Page</h1>
+      <h1>No Results Yet</h1>
     </main>
   );
 }

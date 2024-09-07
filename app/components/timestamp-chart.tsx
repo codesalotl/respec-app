@@ -103,7 +103,7 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
 
     // Create an instance of WaveSurfer
     const ws = WaveSurfer.create({
-      container: "#waveform",
+      container: "#waveform2",
       waveColor: `rgb(${waveColorRgb})`,
       progressColor: `rgb(${progressColorRgb})`,
       url: audioUrl,
@@ -174,7 +174,7 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
         <Button onClick={() => setShowCrackles(true)}>Show Crackles</Button>
         <Button onClick={() => setShowCrackles(false)}>Show Wheezes</Button>
       </div>
-      <div id="waveform"></div>
+      <div id="waveform2"></div>
     </div>
   );
 }
