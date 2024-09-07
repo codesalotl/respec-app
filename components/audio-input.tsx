@@ -1,4 +1,8 @@
+// respec-app\components\audio-input.tsx
+
 "use client";
+
+import { useRouter } from 'next/navigation'
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
@@ -12,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export default function AudioInput() {
+  const router = useRouter()
+
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -97,6 +103,12 @@ export default function AudioInput() {
     }
   };
 
+  const handleRedirectToResults = () => {
+    if (audioSrc) {
+      router.push(`/results?audio=${encodeURIComponent(audioSrc)}`);
+    }
+  };
+
   const togglePlayPause = () => {
     if (wavesurferRef.current) {
       if (isPlaying) {
@@ -123,7 +135,7 @@ export default function AudioInput() {
           <div>
             <Input type="file" accept="audio/*" onChange={handleAudioUpload} />
           </div>
-          <Button size="icon">
+          <Button size="icon"  onClick={handleRedirectToResults}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -138,6 +150,10 @@ export default function AudioInput() {
           <Button onClick={() => skip(5)} size="icon">
             <FastForward className="h-4 w-4" />
           </Button>
+
+          <button type="button" onClick={() => router.push('/results')}>
+            Results
+          </button>
         </div>
       </div>
     </div>

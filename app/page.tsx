@@ -1,13 +1,12 @@
 // respec-app\app\page.tsx
 
-import ResultsPage from "@/app/components/results-page";
-import ParallaxPage from "@/app/components/parallax-page";
+// import ResultsPage from "@/app/components/results-page";
 
 export default function Home() {
   return (
     <main>
-      {/* <ParallaxPage /> */}
-      <ResultsPage />
+      {/* <ResultsPage /> */}
+      No Results Yet
     </main>
   );
 }

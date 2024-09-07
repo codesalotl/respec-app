@@ -1,3 +1,5 @@
+// respec-app\app\layout.tsx
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -26,14 +28,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* <AudioInput />
+          <AudioInput />
           <div className="relative z-10 mt-96">
-            <div
-              style={{ height: "200vh", background: "#000", padding: "20px" }}
-            > */}
-              {children}
-            {/* </div>
-          </div> */}
+            <div className="h-[200vh] bg-background p-5">{children}</div>
+          </div>
         </ThemeProvider>
       </body>
     </html>
