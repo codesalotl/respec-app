@@ -1,4 +1,4 @@
-// respec-app\app\components\results-page.tsx
+// respec-app\components\results-page.tsx
 
 "use client";
 
@@ -14,8 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ModeToggle } from "@/components/dark-mode-toggle";
-import { DiagnoseChart } from "@/app/components/diagnose-chart";
-import { TimestampChart } from "@/app/components/timestamp-chart";
+import { DiagnoseChart } from "@/components/diagnose-chart";
+import { TimestampChart } from "@/components/timestamp-chart";
 
 export default function ResultsPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null);

@@ -1,3 +1,5 @@
+// respec-app\components\audio-input.tsx
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -11,10 +13,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+import { useAudioContext } from "@/components/audio-context";
+import { useResultsContext } from "@/components/results-context";
+import { useRouter } from "next/navigation";
+
 export default function AudioInput() {
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const router = useRouter();
+  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioContext();
+  const { setDiagnoseResult, setTimestampResult } = useResultsContext();
+
+  // const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
 
@@ -34,6 +47,10 @@ export default function AudioInput() {
       if (wavesurferRef.current) {
         wavesurferRef.current.destroy();
       }
+
+      // Reset states before loading the new audio
+      setIsWaveSurferReady(false);
+      setIsLoading(true);
 
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
@@ -63,6 +80,14 @@ export default function AudioInput() {
         ],
       });
 
+      // Track the loading state
+      wavesurferRef.current.on("loading", (percent) => {
+        console.log("Loading", percent + "%");
+        if (percent === 100) {
+          setIsLoading(false);  // Audio is fully loaded
+        }
+      });
+
       wavesurferRef.current.on("interaction", () => {
         wavesurferRef.current?.play();
         setIsPlaying(true);
@@ -79,6 +104,12 @@ export default function AudioInput() {
       wavesurferRef.current.on("finish", () => {
         setIsPlaying(false);
       });
+
+      wavesurferRef.current.on("ready", () => {
+        console.log("WaveSurfer is ready");
+        setIsWaveSurferReady(true);
+        setIsLoading(false);  // Ensure loading is false after ready
+      });
     }
   }, [audioSrc]);
 
@@ -92,6 +123,7 @@ export default function AudioInput() {
       const audioUrl = URL.createObjectURL(file);
       setAudioSrc(audioUrl);
       setAudioFile(file);
+      console.log("Audio source set:", audioUrl);
     } else {
       alert("Please select a valid audio file.");
     }
@@ -113,17 +145,32 @@ export default function AudioInput() {
     }
   };
 
+  const handleResultsRedirect = () => {
+    if (isWaveSurferReady) {
+      setCurrentAudio(audioSrc);
+
+      // Clear previous results when new audio is uploaded
+      setDiagnoseResult(null);
+      setTimestampResult(null);
+
+      router.push("/results");
+    }
+  };
+
   return (
-    <div className="fixed top-0 left-0 w-full h-full z-0 p-4">
+    <div>
       <h1>Audio Input</h1>
-      <br />
       <div>
         <Label htmlFor="audio">Audio</Label>
         <div className="flex flex-row space-x-4">
           <div>
             <Input type="file" accept="audio/*" onChange={handleAudioUpload} />
           </div>
-          <Button size="icon">
+          <Button
+            size="icon"
+            onClick={handleResultsRedirect}
+            disabled={!isWaveSurferReady}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -133,11 +180,22 @@ export default function AudioInput() {
             <Rewind className="h-4 w-4" />
           </Button>
           <Button onClick={togglePlayPause} size="icon">
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
           </Button>
           <Button onClick={() => skip(5)} size="icon">
             <FastForward className="h-4 w-4" />
           </Button>
+
+          {/* <button type="button" onClick={() => router.push("/")}>
+            Home
+          </button>
+          <button type="button" onClick={() => router.push("/results")}>
+            Results
+          </button> */}
         </div>
       </div>
     </div>
