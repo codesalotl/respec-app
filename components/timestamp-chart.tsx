@@ -1,3 +1,5 @@
+// respec-app\components\timestamp-chart.tsx
+
 import React, { useEffect, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import Spectrogram from "wavesurfer.js/dist/plugins/spectrogram.esm.js";
@@ -72,10 +74,13 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
 
     const regions = RegionsPlugin.create();
 
-    function hslToRgb(hsl) {
-      const [h, s, l] = hsl.match(/\d+/g).map(Number);
+    type HSL = `${number} ${number}% ${number}%`;
+
+    // Function to convert HSL to RGB
+    function hslToRgb(hsl: HSL): string {
+      const [h, s, l] = hsl.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
       const a = (s * Math.min(l, 100 - l)) / 100;
-      const f = (n) => {
+      const f = (n: number) => {
         const k = (n + h / 30) % 12;
         const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
         return Math.round((255 * color) / 100);
@@ -83,23 +88,18 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
       return `${f(0)}, ${f(8)}, ${f(4)}`;
     }
 
-    const waveColorHsl = getComputedStyle(document.documentElement)
-      .getPropertyValue("--chart-6")
-      .trim();
-    const progressColor2Hsl = getComputedStyle(document.documentElement)
-      .getPropertyValue("--chart-7")
-      .trim();
-    const cracklesColorHs1 = getComputedStyle(document.documentElement)
-      .getPropertyValue("--chart-5")
-      .trim();
-    const wheezesColor2Hsl = getComputedStyle(document.documentElement)
-      .getPropertyValue("--chart-7")
-      .trim();
+    // Function to retrieve and convert color values
+    function getColorRgb(cssVariable: string): string {
+      const hsl = getComputedStyle(document.documentElement)
+        .getPropertyValue(cssVariable)
+        .trim() as HSL;
+      return hslToRgb(hsl);
+    }
 
-    const waveColorRgb = hslToRgb(waveColorHsl);
-    const progressColorRgb = hslToRgb(progressColor2Hsl);
-    const cracklesColorRgb = hslToRgb(cracklesColorHs1);
-    const wheezesColorRgb = hslToRgb(wheezesColor2Hsl);
+    // Retrieve and convert color values
+    const waveColorRgb = getColorRgb("--chart-6");
+    const progressColorRgb = getColorRgb("--chart-7");
+    const regionColorRgb = getColorRgb("--chart-5");
 
     // Create an instance of WaveSurfer
     const ws = WaveSurfer.create({
@@ -141,8 +141,8 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
             ).toFixed(2)}%)`;
 
         const color = showCrackles
-          ? `rgb(${cracklesColorRgb}, 0.5)`
-          : `rgb(${cracklesColorRgb}, 0.5)`;
+          ? `rgb(${regionColorRgb}, 0.5)`
+          : `rgb(${regionColorRgb}, 0.5)`;
 
         createRegion(region.start_time, region.end_time, content, color);
       });

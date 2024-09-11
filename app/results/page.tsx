@@ -1,12 +1,13 @@
-// app/results/page.tsx
+// respec-app\app\results\page.tsx
 
 "use client";
 
 import { useAudioContext } from "@/components/audio-context";
+import { useResultsContext } from "@/components/results-context";
 import { useEffect, useState } from "react";
 
-import { DiagnoseChart } from "@/app/components/diagnose-chart";
-import { TimestampChart } from "@/app/components/timestamp-chart";
+import { DiagnoseChart } from "@/components/diagnose-chart";
+import { TimestampChart } from "@/components/timestamp-chart";
 
 import {
   Card,
@@ -19,9 +20,18 @@ import {
 
 export default function Results() {
   const { currentAudio } = useAudioContext();
-  const [diagnoseResult, setDiagnoseResult] = useState<object | null>(null);
-  const [timestampResult, setTimestampResult] = useState<object | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const {
+    diagnoseResult,
+    timestampResult,
+    setDiagnoseResult,
+    setTimestampResult,
+    audioFile,
+    setAudioFile,
+  } = useResultsContext();
+
+  // const [diagnoseResult, setDiagnoseResult] = useState<object | null>(null);
+  // const [timestampResult, setTimestampResult] = useState<object | null>(null);
+  // const [audioFile, setAudioFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
@@ -48,9 +58,8 @@ export default function Results() {
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!currentAudio) {
-        setError("No Results Yet");
-        return;
+      if (!currentAudio || diagnoseResult || timestampResult) {
+        return; // Skip API call if results are already present or no audio.
       }
 
       try {
@@ -81,7 +90,7 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [currentAudio]); // Automatically run when `currentAudio` changes
+  }, [currentAudio, diagnoseResult, timestampResult, setDiagnoseResult, setTimestampResult, setAudioFile]); // Automatically run when `currentAudio` changes
 
   return (
     <div>
@@ -89,7 +98,7 @@ export default function Results() {
       {currentAudio ? (
         <>
           {/* <audio src={currentAudio} controls /> */}
-          <div className="m-8 flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4">
             {/* Diagnose Result */}
             {diagnoseResult ? (
               <Card>

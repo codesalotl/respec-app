@@ -1,4 +1,4 @@
-// respec-app\app\components\diagnose-chart.tsx
+// respec-app\components\diagnose-chart.tsx
 
 "use client";
 

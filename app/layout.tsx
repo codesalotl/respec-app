@@ -3,10 +3,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
 
+import { ThemeProvider } from "@/components/theme-provider";
+import { ResultsProvider } from "@/components/results-context";
 import { AudioProvider } from "@/components/audio-context";
+
 import AudioInput from "@/components/audio-input";
+import Header from "@/components/header";
+import Navbar from "@/components/navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,12 +33,22 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AudioProvider>
-            <AudioInput />
-            <div className="relative z-10 mt-[50vh] min-h-[100vh] p-5 bg-background">
-              {children}
-            </div>
-          </AudioProvider>
+          <ResultsProvider>
+            <AudioProvider>
+              <div className="fixed top-0 left-0 w-full h-full z-0 p-4">
+                <div className="space-y-4">
+                  <Header />
+                  <AudioInput />
+                </div>
+              </div>
+              <div className="relative z-10 mt-[25rem] min-h-[100vh] p-5 bg-background">
+                {children}
+              </div>
+              <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20">
+                <Navbar />
+              </div>
+            </AudioProvider>
+          </ResultsProvider>
         </ThemeProvider>
       </body>
     </html>
