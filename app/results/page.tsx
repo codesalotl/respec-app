@@ -2,12 +2,7 @@
 
 "use client";
 
-import { useAudioContext } from "@/components/audio-context";
-import { useResultsContext } from "@/components/results-context";
 import { useEffect, useState } from "react";
-
-import { DiagnoseChart } from "@/components/diagnose-chart";
-import { TimestampChart } from "@/components/timestamp-chart";
 
 import {
   Card,
@@ -17,6 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+import { useResultsContext } from "@/components/results-context";
+import { useAudioContext } from "@/components/audio-context";
+
+import DiagnoseChart from "@/components/diagnose-chart";
+import TimestampChart from "@/components/timestamp-chart";
 
 export default function Results() {
   const { currentAudio } = useAudioContext();
@@ -29,9 +30,6 @@ export default function Results() {
     setAudioFile,
   } = useResultsContext();
 
-  // const [diagnoseResult, setDiagnoseResult] = useState<object | null>(null);
-  // const [timestampResult, setTimestampResult] = useState<object | null>(null);
-  // const [audioFile, setAudioFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
@@ -59,22 +57,19 @@ export default function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       if (!currentAudio || diagnoseResult || timestampResult) {
-        return; // Skip API call if results are already present or no audio.
+        return;
       }
 
       try {
-        // Fetch the blob from the `currentAudio` URL
         const response = await fetch(currentAudio);
         const blob = await response.blob();
 
-        // Create a File from the Blob
         const fileName = currentAudio.split("/").pop() || "audiofile";
         const fileType = blob.type || "audio/mpeg";
         const file = new File([blob], fileName, { type: fileType });
 
         setAudioFile(file);
 
-        // Send the File to the `/diagnose` and `/timestamp` endpoints
         const [diagnoseData, timestampData] = await Promise.all([
           sendAudioToAPI(file, "/diagnose"),
           sendAudioToAPI(file, "/timestamp"),
@@ -90,33 +85,32 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [currentAudio, diagnoseResult, timestampResult, setDiagnoseResult, setTimestampResult, setAudioFile]); // Automatically run when `currentAudio` changes
+  }, [currentAudio, diagnoseResult, timestampResult, setDiagnoseResult, setTimestampResult, setAudioFile]);
 
   return (
     <div>
       <h1>Results Page</h1>
       {currentAudio ? (
         <>
-          {/* <audio src={currentAudio} controls /> */}
           <div className="flex flex-col space-y-4">
-            {/* Diagnose Result */}
             {diagnoseResult ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Diagnosis Result</CardTitle>
                 </CardHeader>
+                <pre>{JSON.stringify(diagnoseResult, null, 2)}</pre>
                 <DiagnoseChart data={diagnoseResult} />
               </Card>
             ) : (
               <p>Loading diagnosis results</p>
             )}
 
-            {/* Timestamp Result */}
             {timestampResult && audioFile ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Timestamp Result</CardTitle>
                 </CardHeader>
+                <pre>{JSON.stringify(timestampResult, null, 2)}</pre>
                 <TimestampChart
                   audioUrl={URL.createObjectURL(audioFile)}
                   regionsData={timestampResult}

@@ -55,7 +55,7 @@ function combineRegions(regionsData: Region[]): Region[] {
   return combinedRegions;
 }
 
-export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
+export default function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
   const [showCrackles, setShowCrackles] = useState(true);
 
   // Log the regionsData to inspect its contents

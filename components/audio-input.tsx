@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
+
 import WaveSurfer from "wavesurfer.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
@@ -84,7 +85,7 @@ export default function AudioInput() {
       wavesurferRef.current.on("loading", (percent) => {
         console.log("Loading", percent + "%");
         if (percent === 100) {
-          setIsLoading(false);  // Audio is fully loaded
+          setIsLoading(false); // Audio is fully loaded
         }
       });
 
@@ -108,7 +109,7 @@ export default function AudioInput() {
       wavesurferRef.current.on("ready", () => {
         console.log("WaveSurfer is ready");
         setIsWaveSurferReady(true);
-        setIsLoading(false);  // Ensure loading is false after ready
+        setIsLoading(false); // Ensure loading is false after ready
       });
     }
   }, [audioSrc]);
@@ -189,13 +190,6 @@ export default function AudioInput() {
           <Button onClick={() => skip(5)} size="icon">
             <FastForward className="h-4 w-4" />
           </Button>
-
-          {/* <button type="button" onClick={() => router.push("/")}>
-            Home
-          </button>
-          <button type="button" onClick={() => router.push("/results")}>
-            Results
-          </button> */}
         </div>
       </div>
     </div>
