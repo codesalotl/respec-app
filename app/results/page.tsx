@@ -3,6 +3,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/utils/client";
+import { v4 as uuidv4 } from "uuid"; // Import UUID for generating unique identifiers
 
 import {
   Card,
@@ -12,6 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { useResultsContext } from "@/components/results-context";
 import { useAudioContext } from "@/components/audio-context";
@@ -31,6 +42,9 @@ export default function Results() {
   } = useResultsContext();
 
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false); // Add saving state
+  const [resultsId, setResultsId] = useState<string | null>(null); // Store the unique ID
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
     const formData = new FormData();
@@ -51,6 +65,43 @@ export default function Results() {
     } catch (error) {
       console.error(error);
       throw new Error(`Error uploading audio to ${endpoint}`);
+    }
+  };
+
+  // Function to save diagnoseResult and timestampResult to Supabase
+  const saveResultsToDatabase = async () => {
+    if (!diagnoseResult || !timestampResult) {
+      setError("No results to save.");
+      return;
+    }
+
+    const uniqueId = uuidv4(); // Generate a unique identifier
+    setResultsId(uniqueId); // Save the ID for later use
+
+    setIsSaving(true);
+    try {
+      const { error: diagnoseError } = await supabase
+        .from("diagnose_results")
+        .insert([{ id: uniqueId, results: diagnoseResult }]); // Insert diagnose results with ID
+
+      if (diagnoseError) {
+        throw new Error("Error saving diagnose results");
+      }
+
+      const { error: timestampError } = await supabase
+        .from("timestamp_results")
+        .insert([{ id: uniqueId, results: timestampResult }]); // Insert timestamp results with ID
+
+      if (timestampError) {
+        throw new Error("Error saving timestamp results");
+      }
+
+      setIsSaving(false); // Stop saving
+      setIsDialogOpen(true); // Open the dialog
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save results.");
+      setIsSaving(false); // Stop saving on error
     }
   };
 
@@ -85,7 +136,14 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [currentAudio, diagnoseResult, timestampResult, setDiagnoseResult, setTimestampResult, setAudioFile]);
+  }, [
+    currentAudio,
+    diagnoseResult,
+    timestampResult,
+    setDiagnoseResult,
+    setTimestampResult,
+    setAudioFile,
+  ]);
 
   return (
     <div>
@@ -98,7 +156,7 @@ export default function Results() {
                 <CardHeader>
                   <CardTitle>Diagnosis Result</CardTitle>
                 </CardHeader>
-                <pre>{JSON.stringify(diagnoseResult, null, 2)}</pre>
+                {/* <pre>{JSON.stringify(diagnoseResult, null, 2)}</pre> */}
                 <DiagnoseChart data={diagnoseResult} />
               </Card>
             ) : (
@@ -106,19 +164,47 @@ export default function Results() {
             )}
 
             {timestampResult && audioFile ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Timestamp Result</CardTitle>
-                </CardHeader>
-                <pre>{JSON.stringify(timestampResult, null, 2)}</pre>
-                <TimestampChart
-                  audioUrl={URL.createObjectURL(audioFile)}
-                  regionsData={timestampResult}
-                />
-              </Card>
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Timestamp Result</CardTitle>
+                  </CardHeader>
+                  {/* <pre>{JSON.stringify(timestampResult, null, 2)}</pre> */}
+                  <TimestampChart
+                    audioUrl={URL.createObjectURL(audioFile)}
+                    regionsData={timestampResult}
+                  />
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={saveResultsToDatabase}
+                    disabled={isSaving}
+                    className={isSaving ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    {isSaving ? "Saving..." : "Save Results to Database"}
+                  </Button>
+                </div>
+              </>
             ) : (
               <p>Loading timestamp results</p>
             )}
+
+            {/* Dialog for results saved alert */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Results Saved</DialogTitle>
+                  <DialogDescription>
+                    The results have been successfully saved to the database.
+                    Your Results ID is: {resultsId}
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+
+            {/* Display results ID */}
+            {/* {resultsId && <p className="mt-4">Results ID: {resultsId}</p>} */}
           </div>
         </>
       ) : (

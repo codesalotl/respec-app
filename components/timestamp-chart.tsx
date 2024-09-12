@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
+import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
+import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
+import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import Spectrogram from "wavesurfer.js/dist/plugins/spectrogram.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 
@@ -55,7 +58,10 @@ function combineRegions(regionsData: Region[]): Region[] {
   return combinedRegions;
 }
 
-export default function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
+export default function TimestampChart({
+  audioUrl,
+  regionsData,
+}: TimestampChartProps) {
   const [showCrackles, setShowCrackles] = useState(true);
 
   // Log the regionsData to inspect its contents
@@ -106,8 +112,29 @@ export default function TimestampChart({ audioUrl, regionsData }: TimestampChart
       container: "#waveform2",
       waveColor: `rgb(${waveColorRgb})`,
       progressColor: `rgb(${progressColorRgb})`,
+      barWidth: 5,
+      barGap: 5,
+      barRadius: 30,
+      dragToSeek: true,
+      hideScrollbar: true,
+      minPxPerSec: 10,
       url: audioUrl,
-      plugins: [regions],
+      plugins: [
+        regions,
+        TimelinePlugin.create(),
+        Minimap.create({
+          height: 20,
+          waveColor: "#ddd",
+          progressColor: "#999",
+        }),
+        Hover.create({
+          lineColor: "#ff0000",
+          lineWidth: 2,
+          labelBackground: "#555",
+          labelColor: "#fff",
+          labelSize: "11px",
+        }),
+      ],
     });
 
     // Function to create a region

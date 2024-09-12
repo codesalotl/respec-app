@@ -45,7 +45,9 @@ export default function RootLayout({
                 {children}
               </div>
               <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20">
-                <Navbar />
+                <div className="flex bg-background">
+                  <Navbar />
+                </div>
               </div>
             </AudioProvider>
           </ResultsProvider>
