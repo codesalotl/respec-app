@@ -24,7 +24,7 @@ export default function AudioInput() {
 
   const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioStore();
   const { setTimestampResult, setAudioFile } = useResultsStore();
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,8 +123,8 @@ export default function AudioInput() {
 
       const audioUrl = URL.createObjectURL(file);
       setAudioSrc(audioUrl);
-      setAudioFile(file);
-      console.log("Audio source set:", audioUrl);
+      // setAudioFile(file);
+      // console.log("Audio source set:", audioUrl);
     } else {
       alert("Please select a valid audio file.");
     }
@@ -149,7 +149,6 @@ export default function AudioInput() {
   const handleResultsRedirect = () => {
     if (isWaveSurferReady) {
       setCurrentAudio(audioSrc);
-
       setTimestampResult(null);
 
       router.push("/results");

@@ -28,11 +28,14 @@ import useAudioStore from "@/components/store/audio-store";
 import useResultsStore from "@/components/store/results-store";
 
 import TimestampChart from "@/components/timestamp-chart";
+import ResultsTable from "@/components/results-table";
+import ResultsRatio from "@/components/results-ratio";
+import ResultsSummary from "@/components/results-summary";
 
 export default function Results() {
-
   const { currentAudio, setCurrentAudio } = useAudioStore();
-  const { timestampResult, setTimestampResult, audioFile, setAudioFile } = useResultsStore();
+  const { timestampResult, setTimestampResult, audioFile, setAudioFile } =
+    useResultsStore();
 
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,32 +64,31 @@ export default function Results() {
     }
   };
 
-  // Function to save timestampResult to Supabase
   const saveResultsToDatabase = async () => {
     if (!timestampResult) {
       setError("No results to save.");
       return;
     }
 
-    const uniqueId = uuidv4(); // Generate a unique identifier
-    setResultsId(uniqueId); // Save the ID for later use
+    const uniqueId = uuidv4();
+    setResultsId(uniqueId);
 
     setIsSaving(true);
     try {
       const { error: timestampError } = await supabase
         .from("timestamp_results")
-        .insert([{ id: uniqueId, results: timestampResult }]); // Insert timestamp results with ID
+        .insert([{ id: uniqueId, results: timestampResult }]);
 
       if (timestampError) {
         throw new Error("Error saving timestamp results");
       }
 
-      setIsSaving(false); // Stop saving
-      setIsDialogOpen(true); // Open the dialog
+      setIsSaving(false);
+      setIsDialogOpen(true);
     } catch (err) {
       console.error(err);
       setError("Failed to save results.");
-      setIsSaving(false); // Stop saving on error
+      setIsSaving(false);
     }
   };
 
@@ -127,14 +129,50 @@ export default function Results() {
           <div className="flex flex-col space-y-4">
             {timestampResult && audioFile ? (
               <>
+                <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                  <div className="w-full md:w-1/2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ratio View</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResultsRatio timestampResult={timestampResult} />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="w-full md:w-1/2 min-h-[300px]">
+                    <Card className="h-full">
+                      <CardHeader>
+                        <CardTitle>Summary View</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResultsSummary timestampResult={timestampResult} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Timestamp Result</CardTitle>
                   </CardHeader>
-                  <TimestampChart
-                    audioUrl={URL.createObjectURL(audioFile)}
-                    regionsData={timestampResult}
-                  />
+                  <CardContent>
+                    {/* <pre>{JSON.stringify(timestampResult, null, 2)}</pre> */}
+                    <TimestampChart
+                      audioUrl={URL.createObjectURL(audioFile)}
+                      regionsData={timestampResult}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Table View</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResultsTable timestampResult={timestampResult} />
+                  </CardContent>
                 </Card>
 
                 <div className="flex justify-end">
@@ -151,7 +189,6 @@ export default function Results() {
               <p>Loading timestamp results</p>
             )}
 
-            {/* Dialog for results saved alert */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent>
                 <DialogHeader>

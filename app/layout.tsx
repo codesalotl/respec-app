@@ -30,24 +30,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* <ResultsProvider>
-            <AudioProvider> */}
-              <div className="fixed top-0 left-0 w-full h-full z-0 p-4">
-                <div className="space-y-4">
-                  <Header />
-                  <AudioInput />
-                </div>
-              </div>
-              <div className="relative z-10 mt-[25rem] min-h-[100vh] p-5 bg-background">
-                {children}
-              </div>
-              <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20">
-                <div className="flex bg-background">
-                  <Navbar />
-                </div>
-              </div>
-            {/* </AudioProvider>
-          </ResultsProvider> */}
+          <div className="fixed top-0 left-0 w-full h-full z-0 p-4">
+            <div className="space-y-4">
+              <Header />
+              <AudioInput />
+            </div>
+          </div>
+          <div className="relative z-10 mt-[25rem] mb-10 min-h-[100vh] p-5 bg-background">
+            {children}
+          </div>
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex bg-background">
+              <Navbar />
+            </div>
+          </div>
         </ThemeProvider>
       </body>
     </html>

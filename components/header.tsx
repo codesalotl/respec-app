@@ -7,7 +7,7 @@ export default function Header() {
     <div className="w-full flex justify-between items-center">
       <ModeToggle />
       <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-        ReSpec
+        ResSpec
       </h3>
       <Button variant="link">Login</Button>
     </div>

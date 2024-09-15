@@ -1,3 +1,7 @@
+// respec-app\components\store\audio-store.ts
+
+"use client";
+
 import { create } from 'zustand';
 
 interface AudioState {

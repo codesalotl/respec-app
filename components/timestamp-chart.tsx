@@ -169,12 +169,14 @@ export default function TimestampChart({
   }, [audioUrl, combinedCrackles, combinedWheezes, showCrackles]); // Re-run the effect if audioUrl, combinedCrackles, combinedWheezes, or showCrackles changes
 
   return (
-    <div className="min-h-64">
-      <div className="m-6 flex space-x-4">
-        <Button onClick={() => setShowCrackles(true)}>Show Crackles</Button>
-        <Button onClick={() => setShowCrackles(false)}>Show Wheezes</Button>
+    <div className="min-h-72">
+      <div className="flex flex-col space-y-4">
+        <div className="flex space-x-4">
+          <Button onClick={() => setShowCrackles(true)}>Show Crackles</Button>
+          <Button onClick={() => setShowCrackles(false)}>Show Wheezes</Button>
+        </div>
+        <div id="waveform2"></div>
       </div>
-      <div id="waveform2"></div>
     </div>
   );
 }
