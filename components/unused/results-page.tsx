@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ModeToggle } from "@/components/dark-mode-toggle";
-import { DiagnoseChart } from "@/components/diagnose-chart";
+import { DiagnoseChart } from "@/components/unused/diagnose-chart";
 import { TimestampChart } from "@/components/timestamp-chart";
 
 export default function ResultsPage() {

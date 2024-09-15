@@ -80,38 +80,11 @@ export default function TimestampChart({
 
     const regions = RegionsPlugin.create();
 
-    type HSL = `${number} ${number}% ${number}%`;
-
-    // Function to convert HSL to RGB
-    function hslToRgb(hsl: HSL): string {
-      const [h, s, l] = hsl.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
-      const a = (s * Math.min(l, 100 - l)) / 100;
-      const f = (n: number) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round((255 * color) / 100);
-      };
-      return `${f(0)}, ${f(8)}, ${f(4)}`;
-    }
-
-    // Function to retrieve and convert color values
-    function getColorRgb(cssVariable: string): string {
-      const hsl = getComputedStyle(document.documentElement)
-        .getPropertyValue(cssVariable)
-        .trim() as HSL;
-      return hslToRgb(hsl);
-    }
-
-    // Retrieve and convert color values
-    const waveColorRgb = getColorRgb("--chart-6");
-    const progressColorRgb = getColorRgb("--chart-7");
-    const regionColorRgb = getColorRgb("--chart-5");
-
     // Create an instance of WaveSurfer
     const ws = WaveSurfer.create({
       container: "#waveform2",
-      waveColor: `rgb(${waveColorRgb})`,
-      progressColor: `rgb(${progressColorRgb})`,
+      waveColor: `rgb(183, 104, 60)`,
+      progressColor: `rgb(174, 112, 45)`,
       barWidth: 5,
       barGap: 5,
       barRadius: 30,
@@ -168,8 +141,8 @@ export default function TimestampChart({
             ).toFixed(2)}%)`;
 
         const color = showCrackles
-          ? `rgb(${regionColorRgb}, 0.5)`
-          : `rgb(${regionColorRgb}, 0.5)`;
+          ? `rgb(191, 96, 77, 0.5)`
+          : `rgb(191, 96, 77, 0.5)`;
 
         createRegion(region.start_time, region.end_time, content, color);
       });

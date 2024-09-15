@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/client";
-import { v4 as uuidv4 } from "uuid"; // Import UUID for generating unique identifiers
+import { v4 as uuidv4 } from "uuid";
 
 import {
   Card,
@@ -24,26 +24,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { useResultsContext } from "@/components/results-context";
-import { useAudioContext } from "@/components/audio-context";
+import useAudioStore from "@/components/store/audio-store";
+import useResultsStore from "@/components/store/results-store";
 
-import DiagnoseChart from "@/components/diagnose-chart";
 import TimestampChart from "@/components/timestamp-chart";
 
 export default function Results() {
-  const { currentAudio } = useAudioContext();
-  const {
-    diagnoseResult,
-    timestampResult,
-    setDiagnoseResult,
-    setTimestampResult,
-    audioFile,
-    setAudioFile,
-  } = useResultsContext();
+
+  const { currentAudio, setCurrentAudio } = useAudioStore();
+  const { timestampResult, setTimestampResult, audioFile, setAudioFile } = useResultsStore();
 
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false); // Add saving state
-  const [resultsId, setResultsId] = useState<string | null>(null); // Store the unique ID
+  const [isSaving, setIsSaving] = useState(false);
+  const [resultsId, setResultsId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
@@ -68,9 +61,9 @@ export default function Results() {
     }
   };
 
-  // Function to save diagnoseResult and timestampResult to Supabase
+  // Function to save timestampResult to Supabase
   const saveResultsToDatabase = async () => {
-    if (!diagnoseResult || !timestampResult) {
+    if (!timestampResult) {
       setError("No results to save.");
       return;
     }
@@ -80,14 +73,6 @@ export default function Results() {
 
     setIsSaving(true);
     try {
-      const { error: diagnoseError } = await supabase
-        .from("diagnose_results")
-        .insert([{ id: uniqueId, results: diagnoseResult }]); // Insert diagnose results with ID
-
-      if (diagnoseError) {
-        throw new Error("Error saving diagnose results");
-      }
-
       const { error: timestampError } = await supabase
         .from("timestamp_results")
         .insert([{ id: uniqueId, results: timestampResult }]); // Insert timestamp results with ID
@@ -107,7 +92,7 @@ export default function Results() {
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!currentAudio || diagnoseResult || timestampResult) {
+      if (!currentAudio || timestampResult) {
         return;
       }
 
@@ -121,12 +106,8 @@ export default function Results() {
 
         setAudioFile(file);
 
-        const [diagnoseData, timestampData] = await Promise.all([
-          sendAudioToAPI(file, "/diagnose"),
-          sendAudioToAPI(file, "/timestamp"),
-        ]);
+        const timestampData = await sendAudioToAPI(file, "/timestamp");
 
-        setDiagnoseResult(diagnoseData);
         setTimestampResult(timestampData);
         setError(null);
       } catch (err) {
@@ -136,14 +117,7 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [
-    currentAudio,
-    diagnoseResult,
-    timestampResult,
-    setDiagnoseResult,
-    setTimestampResult,
-    setAudioFile,
-  ]);
+  }, [currentAudio, timestampResult, setTimestampResult, setAudioFile]);
 
   return (
     <div>
@@ -151,25 +125,12 @@ export default function Results() {
       {currentAudio ? (
         <>
           <div className="flex flex-col space-y-4">
-            {diagnoseResult ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Diagnosis Result</CardTitle>
-                </CardHeader>
-                {/* <pre>{JSON.stringify(diagnoseResult, null, 2)}</pre> */}
-                <DiagnoseChart data={diagnoseResult} />
-              </Card>
-            ) : (
-              <p>Loading diagnosis results</p>
-            )}
-
             {timestampResult && audioFile ? (
               <>
                 <Card>
                   <CardHeader>
                     <CardTitle>Timestamp Result</CardTitle>
                   </CardHeader>
-                  {/* <pre>{JSON.stringify(timestampResult, null, 2)}</pre> */}
                   <TimestampChart
                     audioUrl={URL.createObjectURL(audioFile)}
                     regionsData={timestampResult}
@@ -202,9 +163,6 @@ export default function Results() {
                 </DialogHeader>
               </DialogContent>
             </Dialog>
-
-            {/* Display results ID */}
-            {/* {resultsId && <p className="mt-4">Results ID: {resultsId}</p>} */}
           </div>
         </>
       ) : (

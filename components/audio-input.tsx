@@ -14,17 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-import { useAudioContext } from "@/components/audio-context";
-import { useResultsContext } from "@/components/results-context";
+import useAudioStore from "@/components/store/audio-store";
+import useResultsStore from "@/components/store/results-store";
+
 import { useRouter } from "next/navigation";
 
 export default function AudioInput() {
   const router = useRouter();
-  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioContext();
-  const { setDiagnoseResult, setTimestampResult } = useResultsContext();
 
-  // const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioStore();
+  const { setTimestampResult, setAudioFile } = useResultsStore();
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,33 +43,6 @@ export default function AudioInput() {
     };
   }, [audioSrc]);
 
-  type HSL = `${number} ${number}% ${number}%`;
-
-  // Function to convert HSL to RGB
-  function hslToRgb(hsl: HSL): string {
-    const [h, s, l] = hsl.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
-    const a = (s * Math.min(l, 100 - l)) / 100;
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round((255 * color) / 100);
-    };
-    return `${f(0)}, ${f(8)}, ${f(4)}`;
-  }
-
-  // Function to retrieve and convert color values
-  function getColorRgb(cssVariable: string): string {
-    const hsl = getComputedStyle(document.documentElement)
-      .getPropertyValue(cssVariable)
-      .trim() as HSL;
-    return hslToRgb(hsl);
-  }
-
-  // Retrieve and convert color values
-  const waveColorRgb = getColorRgb("--chart-6");
-  const progressColorRgb = getColorRgb("--chart-7");
-  const regionColorRgb = getColorRgb("--chart-5");
-
   useEffect(() => {
     if (audioSrc && waveformRef.current) {
       if (wavesurferRef.current) {
@@ -82,8 +55,8 @@ export default function AudioInput() {
 
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: `rgb(${waveColorRgb})`,
-        progressColor: `rgb(${progressColorRgb})`,
+        waveColor: `rgb(183, 104, 60)`,
+        progressColor: `rgb(174, 112, 45)`,
         barWidth: 5,
         barGap: 5,
         barRadius: 30,
@@ -177,8 +150,6 @@ export default function AudioInput() {
     if (isWaveSurferReady) {
       setCurrentAudio(audioSrc);
 
-      // Clear previous results when new audio is uploaded
-      setDiagnoseResult(null);
       setTimestampResult(null);
 
       router.push("/results");

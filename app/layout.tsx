@@ -5,9 +5,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/theme-provider";
-import { ResultsProvider } from "@/components/results-context";
-import { AudioProvider } from "@/components/audio-context";
-
 import AudioInput from "@/components/audio-input";
 import Header from "@/components/header";
 import Navbar from "@/components/navbar";
@@ -33,8 +30,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ResultsProvider>
-            <AudioProvider>
+          {/* <ResultsProvider>
+            <AudioProvider> */}
               <div className="fixed top-0 left-0 w-full h-full z-0 p-4">
                 <div className="space-y-4">
                   <Header />
@@ -49,8 +46,8 @@ export default function RootLayout({
                   <Navbar />
                 </div>
               </div>
-            </AudioProvider>
-          </ResultsProvider>
+            {/* </AudioProvider>
+          </ResultsProvider> */}
         </ThemeProvider>
       </body>
     </html>
