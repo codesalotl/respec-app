@@ -51,7 +51,7 @@ export default function ResultsSummary({ timestampResult }: ResultsTableProps) {
   }
 
   return (
-    <div className="flex flex-col space-y-14">
+    <div className="flex flex-col space-y-14 mt-4">
       {/* First 3x1 Grid */}
       <div className="grid grid-cols-[3fr_1fr_3fr] gap-4 items-center text-sm">
         <div className="flex flex-col items-center">

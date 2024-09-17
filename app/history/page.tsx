@@ -4,49 +4,76 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/utils/client";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { ExpandedHistory } from "@/components/expanded-history";
+
+interface TimestampResult {
+  id: string;
+  results: object | null;
+  created_at: Date;
+  patient_name: string;
+  age: number;
+  contact_details: string;
+  address: string;
+  citizenship: string;
+  civil_status: string;
+}
 
 export default function ResultsHistoryPage() {
-  const [results, setResults] = useState([]);
-  const [error, setError] = useState(null);
+  const [results, setResults] = useState<TimestampResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedResult, setSelectedResult] = useState<TimestampResult | null>(
+    null
+  );
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch data from both tables and combine results
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        // Fetch data from diagnose_results table
-        const { data: diagnoseData, error: diagnoseError } = await supabase
-          .from("diagnose_results")
-          .select("id, results");
+        const { data: timestampData, error: timestampError } =
+          await supabase.from("timestamp_results").select(`
+            id,
+            results,
+            created_at,
+            patient_name,
+            age,
+            contact_details,
+            address,
+            citizenship,
+            civil_status
+          `);
 
-        // Fetch data from timestamp_results table
-        const { data: timestampData, error: timestampError } = await supabase
-          .from("timestamp_results")
-          .select("id, results");
-
-        // Handle errors for both queries
-        if (diagnoseError) throw new Error(diagnoseError.message);
         if (timestampError) throw new Error(timestampError.message);
 
-        // Combine results by matching IDs
-        const combinedResults = diagnoseData.map((diagnose) => {
-          const timestamp = timestampData.find(
-            (ts) => ts.id === diagnose.id
-          );
-          return {
-            id: diagnose.id,
-            diagnoseResults: diagnose.results,
-            timestampResults: timestamp ? timestamp.results : null, // Handle cases where there might be no match
-          };
-        });
-
-        setResults(combinedResults);
+        setResults(timestampData as TimestampResult[]);
       } catch (err) {
-        setError(err.message);
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred");
+        }
       }
     };
 
     fetchResults();
   }, []);
+
+  const handleRowClick = (result: TimestampResult) => {
+    setSelectedResult(result);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedResult(null);
+  };
 
   if (error) {
     return <div>Error fetching results: {error}</div>;
@@ -54,33 +81,44 @@ export default function ResultsHistoryPage() {
 
   return (
     <div>
-      <h1>Combined Results</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Diagnosis Results</th>
-            <th>Timestamp Results</th>
-          </tr>
-        </thead>
-        <tbody>
+      <h1 className="text-xl font-bold mb-4">Timestamp Results</h1>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Patient Name</TableHead>
+            <TableHead>Age</TableHead>
+            <TableHead>Contact Details</TableHead>
+            <TableHead>Address</TableHead>
+            <TableHead>Citizenship</TableHead>
+            <TableHead>Civil Status</TableHead>
+            <TableHead>Time & Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {results.map((result) => (
-            <tr key={result.id}>
-              <td>{result.id}</td>
-              <td>
-                <pre>{JSON.stringify(result.diagnoseResults, null, 2)}</pre>
-              </td>
-              <td>
-                {result.timestampResults ? (
-                  <pre>{JSON.stringify(result.timestampResults, null, 2)}</pre>
-                ) : (
-                  "No timestamp results"
-                )}
-              </td>
-            </tr>
+            <TableRow
+              key={result.id}
+              onClick={() => handleRowClick(result)}
+              className="cursor-pointer"
+            >
+              <TableCell>{result.id}</TableCell>
+              <TableCell>{result.patient_name}</TableCell>
+              <TableCell>{result.age}</TableCell>
+              <TableCell>{result.contact_details}</TableCell>
+              <TableCell>{result.address}</TableCell>
+              <TableCell>{result.citizenship}</TableCell>
+              <TableCell>{result.civil_status}</TableCell>
+              <TableCell>{new Date(result.created_at).toLocaleDateString()}{" "} {new Date(result.created_at).toLocaleTimeString()}{" "}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
+      <ExpandedHistory
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        result={selectedResult}
+      />
     </div>
   );
 }
