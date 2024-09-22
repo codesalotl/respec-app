@@ -2,37 +2,68 @@
 
 "use client";
 
-import { useAudioContext } from "@/components/audio-context";
-import { useResultsContext } from "@/components/results-context";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { supabase } from "@/utils/client";
+import { v4 as uuidv4 } from "uuid";
 
-import { DiagnoseChart } from "@/components/diagnose-chart";
-import { TimestampChart } from "@/components/timestamp-chart";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Terminal } from "lucide-react";
+
+import useAudioStore from "@/components/store/audio-store";
+import useResultsStore from "@/components/store/results-store";
+
+import TimestampChart from "@/components/timestamp-chart";
+import ResultsTable from "@/components/results-table";
+import ResultsRatio from "@/components/results-ratio";
+import ResultsSummary from "@/components/results-summary";
+import SkeletonResults from "@/components/skeleton-results";
+
+const useUserSession = () => {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
+    };
+
+    fetchSession();
+  }, []);
+
+  return session;
+};
 
 export default function Results() {
-  const { currentAudio } = useAudioContext();
-  const {
-    diagnoseResult,
-    timestampResult,
-    setDiagnoseResult,
-    setTimestampResult,
-    audioFile,
-    setAudioFile,
-  } = useResultsContext();
+  const { currentAudio, setCurrentAudio } = useAudioStore();
+  const { timestampResult, setTimestampResult, audioFile, setAudioFile } =
+    useResultsStore();
 
-  // const [diagnoseResult, setDiagnoseResult] = useState<object | null>(null);
-  // const [timestampResult, setTimestampResult] = useState<object | null>(null);
-  // const [audioFile, setAudioFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [resultsId, setResultsId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
+
+  const patientNameRef = useRef<HTMLInputElement>(null);
+  const ageRef = useRef<HTMLInputElement>(null);
+  const contactDetailsRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const citizenshipRef = useRef<HTMLInputElement>(null);
+  const civilStatusRef = useRef<HTMLInputElement>(null);
+
+  const session = useUserSession();
 
   const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
     const formData = new FormData();
@@ -56,31 +87,84 @@ export default function Results() {
     }
   };
 
+  const saveResultsToDatabase = async () => {
+    if (!timestampResult) {
+      setError("No results to save.");
+      return;
+    }
+
+    const patientName = patientNameRef.current?.value;
+    const age = ageRef.current?.value;
+    const contactDetails = contactDetailsRef.current?.value;
+    const address = addressRef.current?.value;
+    const citizenship = citizenshipRef.current?.value;
+    const civilStatus = civilStatusRef.current?.value;
+
+    if (
+      !patientName ||
+      !age ||
+      !contactDetails ||
+      !address ||
+      !citizenship ||
+      !civilStatus
+    ) {
+      setError("Please fill in all the patient details.");
+      return;
+    }
+
+    const uniqueId = uuidv4();
+    setResultsId(uniqueId);
+
+    setIsSaving(true);
+    try {
+      const { error: insertError } = await supabase
+        .from("timestamp_results")
+        .insert([
+          {
+            id: uniqueId,
+            results: timestampResult,
+            patient_name: patientName,
+            age: age,
+            contact_details: contactDetails,
+            address: address,
+            citizenship: citizenship,
+            civil_status: civilStatus,
+            user_id: session?.user.id,
+          },
+        ]);
+
+      if (insertError) {
+        throw new Error("Error saving results to the database");
+      }
+
+      setIsSaving(false);
+      setIsDialogOpen(true);
+      setIsPatientDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save results.");
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     const fetchResults = async () => {
-      if (!currentAudio || diagnoseResult || timestampResult) {
-        return; // Skip API call if results are already present or no audio.
+      if (!currentAudio || timestampResult) {
+        return;
       }
 
       try {
-        // Fetch the blob from the `currentAudio` URL
         const response = await fetch(currentAudio);
         const blob = await response.blob();
 
-        // Create a File from the Blob
         const fileName = currentAudio.split("/").pop() || "audiofile";
         const fileType = blob.type || "audio/mpeg";
         const file = new File([blob], fileName, { type: fileType });
 
         setAudioFile(file);
 
-        // Send the File to the `/diagnose` and `/timestamp` endpoints
-        const [diagnoseData, timestampData] = await Promise.all([
-          sendAudioToAPI(file, "/diagnose"),
-          sendAudioToAPI(file, "/timestamp"),
-        ]);
+        const timestampData = await sendAudioToAPI(file, "/timestamp");
 
-        setDiagnoseResult(diagnoseData);
         setTimestampResult(timestampData);
         setError(null);
       } catch (err) {
@@ -90,45 +174,126 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [currentAudio, diagnoseResult, timestampResult, setDiagnoseResult, setTimestampResult, setAudioFile]); // Automatically run when `currentAudio` changes
+  }, [currentAudio, timestampResult, setTimestampResult, setAudioFile]);
 
   return (
-    <div>
-      <h1>Results Page</h1>
+    <div className="flex flex-col space-y-4">
+      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+        Results Page
+      </h1>
       {currentAudio ? (
-        <>
-          {/* <audio src={currentAudio} controls /> */}
+        timestampResult ? (
           <div className="flex flex-col space-y-4">
-            {/* Diagnose Result */}
-            {diagnoseResult ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Diagnosis Result</CardTitle>
-                </CardHeader>
-                <DiagnoseChart data={diagnoseResult} />
-              </Card>
-            ) : (
-              <p>Loading diagnosis results</p>
-            )}
+            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+              <div className="w-full md:w-1/2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ratio View</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResultsRatio timestampResult={timestampResult} />
+                  </CardContent>
+                </Card>
+              </div>
 
-            {/* Timestamp Result */}
-            {timestampResult && audioFile ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Timestamp Result</CardTitle>
-                </CardHeader>
+              <div className="w-full md:w-1/2 min-h-[300px]">
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle>Summary View</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResultsSummary timestampResult={timestampResult} />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Timestamp Result</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <TimestampChart
                   audioUrl={URL.createObjectURL(audioFile)}
                   regionsData={timestampResult}
                 />
-              </Card>
-            ) : (
-              <p>Loading timestamp results</p>
-            )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Table View</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResultsTable timestampResult={timestampResult} />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setIsPatientDialogOpen(true)}
+                disabled={isSaving}
+                className={isSaving ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                {isSaving ? "Saving..." : "Save Results to Database"}
+              </Button>
+            </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Results Saved</DialogTitle>
+                  <DialogDescription>
+                    The results have been successfully saved to the database.
+                    Your Results ID is: {resultsId}
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={isPatientDialogOpen}
+              onOpenChange={setIsPatientDialogOpen}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Enter Patient Details</DialogTitle>
+                  <DialogDescription>
+                    Please provide the necessary information before saving the
+                    results.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Input ref={patientNameRef} placeholder="Patient Name" />
+                  <Input ref={ageRef} placeholder="Age" />
+                  <Input
+                    ref={contactDetailsRef}
+                    placeholder="Contact Details"
+                  />
+                  <Input ref={addressRef} placeholder="Address" />
+                  <Input ref={citizenshipRef} placeholder="Citizenship" />
+                  <Input ref={civilStatusRef} placeholder="Civil Status" />
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button onClick={saveResultsToDatabase}>Submit</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </>
+        ) : (
+          <p>Generating Results...</p>
+          // <SkeletonResults />
+        )
       ) : (
-        <p>{error}</p>
+        // <p>{error || "No audio file selected"}</p>
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Ready to Begin?</AlertTitle>
+          <AlertDescription>
+            To start seeing results, simply provide your input or audio command.
+            Let's get going!
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

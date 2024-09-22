@@ -25,7 +25,7 @@ import {
 // Example description for the chart
 export const description = "A donut chart with an active sector";
 
-export function DiagnoseChart({ data }: { data: Record<string, number> }) {
+export default function DiagnoseChart({ data }: { data: Record<string, number> }) {
   // Define the colors in descending order for higher values
   const colorPalette = [
     "hsl(var(--chart-8))",

@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
+import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
+import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
+import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import Spectrogram from "wavesurfer.js/dist/plugins/spectrogram.esm.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 
@@ -55,7 +58,10 @@ function combineRegions(regionsData: Region[]): Region[] {
   return combinedRegions;
 }
 
-export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
+export default function TimestampChart({
+  audioUrl,
+  regionsData,
+}: TimestampChartProps) {
   const [showCrackles, setShowCrackles] = useState(true);
 
   // Log the regionsData to inspect its contents
@@ -74,40 +80,34 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
 
     const regions = RegionsPlugin.create();
 
-    type HSL = `${number} ${number}% ${number}%`;
-
-    // Function to convert HSL to RGB
-    function hslToRgb(hsl: HSL): string {
-      const [h, s, l] = hsl.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
-      const a = (s * Math.min(l, 100 - l)) / 100;
-      const f = (n: number) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round((255 * color) / 100);
-      };
-      return `${f(0)}, ${f(8)}, ${f(4)}`;
-    }
-
-    // Function to retrieve and convert color values
-    function getColorRgb(cssVariable: string): string {
-      const hsl = getComputedStyle(document.documentElement)
-        .getPropertyValue(cssVariable)
-        .trim() as HSL;
-      return hslToRgb(hsl);
-    }
-
-    // Retrieve and convert color values
-    const waveColorRgb = getColorRgb("--chart-6");
-    const progressColorRgb = getColorRgb("--chart-7");
-    const regionColorRgb = getColorRgb("--chart-5");
-
     // Create an instance of WaveSurfer
     const ws = WaveSurfer.create({
       container: "#waveform2",
-      waveColor: `rgb(${waveColorRgb})`,
-      progressColor: `rgb(${progressColorRgb})`,
+      waveColor: `rgb(102, 204, 153)`,
+      progressColor: `rgb(64, 151, 112)`,
+      barWidth: 5,
+      barGap: 5,
+      barRadius: 30,
+      dragToSeek: true,
+      hideScrollbar: true,
+      minPxPerSec: 10,
       url: audioUrl,
-      plugins: [regions],
+      plugins: [
+        regions,
+        TimelinePlugin.create(),
+        Minimap.create({
+          height: 20,
+          waveColor: "#ddd",
+          progressColor: "#999",
+        }),
+        Hover.create({
+          lineColor: "#ff0000",
+          lineWidth: 2,
+          labelBackground: "#555",
+          labelColor: "#fff",
+          labelSize: "11px",
+        }),
+      ],
     });
 
     // Function to create a region
@@ -133,16 +133,16 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
 
       dataToShow.forEach((region) => {
         const content = showCrackles
-          ? `Crackles: Yes (Confidence: ${(
+          ? `Crackles: Yes (${(
               region.crackles_confidence * 100
             ).toFixed(2)}%)`
-          : `Wheezes: Yes (Confidence: ${(
+          : `Wheezes: Yes (${(
               region.wheezes_confidence * 100
             ).toFixed(2)}%)`;
 
         const color = showCrackles
-          ? `rgb(${regionColorRgb}, 0.5)`
-          : `rgb(${regionColorRgb}, 0.5)`;
+          ? `rgb(102, 204, 153, 0.2)`
+          : `rgb(102, 204, 153, 0.2)`;
 
         createRegion(region.start_time, region.end_time, content, color);
       });
@@ -169,12 +169,14 @@ export function TimestampChart({ audioUrl, regionsData }: TimestampChartProps) {
   }, [audioUrl, combinedCrackles, combinedWheezes, showCrackles]); // Re-run the effect if audioUrl, combinedCrackles, combinedWheezes, or showCrackles changes
 
   return (
-    <div className="min-h-64">
-      <div className="m-6 flex space-x-4">
-        <Button onClick={() => setShowCrackles(true)}>Show Crackles</Button>
-        <Button onClick={() => setShowCrackles(false)}>Show Wheezes</Button>
+    <div className="min-h-72">
+      <div className="flex flex-col space-y-4">
+        <div className="flex space-x-4">
+          <Button onClick={() => setShowCrackles(true)}>Show Crackles</Button>
+          <Button onClick={() => setShowCrackles(false)}>Show Wheezes</Button>
+        </div>
+        <div id="waveform2"></div>
       </div>
-      <div id="waveform2"></div>
     </div>
   );
 }

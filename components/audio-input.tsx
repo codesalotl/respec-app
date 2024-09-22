@@ -3,7 +3,17 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
+
 import WaveSurfer from "wavesurfer.js";
 import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
 import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
@@ -13,17 +23,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-import { useAudioContext } from "@/components/audio-context";
-import { useResultsContext } from "@/components/results-context";
+import useAudioStore from "@/components/store/audio-store";
+import useResultsStore from "@/components/store/results-store";
+
 import { useRouter } from "next/navigation";
 
 export default function AudioInput() {
   const router = useRouter();
-  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioContext();
-  const { setDiagnoseResult, setTimestampResult } = useResultsContext();
 
-  // const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioStore();
+  const { setTimestampResult, setAudioFile } = useResultsStore();
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,8 +64,8 @@ export default function AudioInput() {
 
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: "#4F4A85",
-        progressColor: "#383351",
+        waveColor: `rgb(102, 204, 153)`,
+        progressColor: `rgb(64, 151, 112)`,
         barWidth: 5,
         barGap: 5,
         barRadius: 30,
@@ -84,7 +94,7 @@ export default function AudioInput() {
       wavesurferRef.current.on("loading", (percent) => {
         console.log("Loading", percent + "%");
         if (percent === 100) {
-          setIsLoading(false);  // Audio is fully loaded
+          setIsLoading(false); // Audio is fully loaded
         }
       });
 
@@ -108,7 +118,7 @@ export default function AudioInput() {
       wavesurferRef.current.on("ready", () => {
         console.log("WaveSurfer is ready");
         setIsWaveSurferReady(true);
-        setIsLoading(false);  // Ensure loading is false after ready
+        setIsLoading(false); // Ensure loading is false after ready
       });
     }
   }, [audioSrc]);
@@ -122,8 +132,8 @@ export default function AudioInput() {
 
       const audioUrl = URL.createObjectURL(file);
       setAudioSrc(audioUrl);
-      setAudioFile(file);
-      console.log("Audio source set:", audioUrl);
+      // setAudioFile(file);
+      // console.log("Audio source set:", audioUrl);
     } else {
       alert("Please select a valid audio file.");
     }
@@ -148,9 +158,6 @@ export default function AudioInput() {
   const handleResultsRedirect = () => {
     if (isWaveSurferReady) {
       setCurrentAudio(audioSrc);
-
-      // Clear previous results when new audio is uploaded
-      setDiagnoseResult(null);
       setTimestampResult(null);
 
       router.push("/results");
@@ -174,7 +181,17 @@ export default function AudioInput() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="mt-4" ref={waveformRef} id="waveform"></div>
+
+        <div className="mt-4 h-[10.5rem]">
+          {audioSrc ? (
+            <div ref={waveformRef} id="waveform"></div>
+          ) : (
+            <Card className="flex items-center justify-center h-[10.5rem]">
+              <h2 className="text-center">Please upload an audio file.</h2>
+            </Card>
+          )}
+        </div>
+
         <div className="flex space-x-2 mt-4 justify-center">
           <Button onClick={() => skip(-5)} size="icon">
             <Rewind className="h-4 w-4" />
@@ -189,13 +206,6 @@ export default function AudioInput() {
           <Button onClick={() => skip(5)} size="icon">
             <FastForward className="h-4 w-4" />
           </Button>
-
-          {/* <button type="button" onClick={() => router.push("/")}>
-            Home
-          </button>
-          <button type="button" onClick={() => router.push("/results")}>
-            Results
-          </button> */}
         </div>
       </div>
     </div>
