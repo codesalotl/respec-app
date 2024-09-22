@@ -90,10 +90,9 @@ export default function ResultsHistoryPage() {
       ) : !session?.user ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Session Expired</AlertTitle>
+          <AlertTitle>Login Required</AlertTitle>
           <AlertDescription>
-            Your session has expired. Please log in again to view your history
-            and continue.
+            Please log in to view your history and continue.
           </AlertDescription>
         </Alert>
       ) : error ? (

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { Terminal } from "lucide-react"
+import { Terminal } from "lucide-react";
 
 import useAudioStore from "@/components/store/audio-store";
 import useResultsStore from "@/components/store/results-store";
@@ -281,7 +281,7 @@ export default function Results() {
             </Dialog>
           </div>
         ) : (
-          <p>Loading timestamp results</p>
+          <p>Generating Results...</p>
           // <SkeletonResults />
         )
       ) : (

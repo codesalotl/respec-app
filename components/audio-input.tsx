@@ -3,6 +3,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
 
 import WaveSurfer from "wavesurfer.js";
@@ -55,8 +64,8 @@ export default function AudioInput() {
 
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: `rgb(183, 104, 60)`,
-        progressColor: `rgb(174, 112, 45)`,
+        waveColor: `rgb(102, 204, 153)`,
+        progressColor: `rgb(64, 151, 112)`,
         barWidth: 5,
         barGap: 5,
         barRadius: 30,
@@ -172,7 +181,17 @@ export default function AudioInput() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="mt-4" ref={waveformRef} id="waveform"></div>
+
+        <div className="mt-4 h-[10.5rem]">
+          {audioSrc ? (
+            <div ref={waveformRef} id="waveform"></div>
+          ) : (
+            <Card className="flex items-center justify-center h-[10.5rem]">
+              <h2 className="text-center">Please upload an audio file.</h2>
+            </Card>
+          )}
+        </div>
+
         <div className="flex space-x-2 mt-4 justify-center">
           <Button onClick={() => skip(-5)} size="icon">
             <Rewind className="h-4 w-4" />

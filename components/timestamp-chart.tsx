@@ -83,8 +83,8 @@ export default function TimestampChart({
     // Create an instance of WaveSurfer
     const ws = WaveSurfer.create({
       container: "#waveform2",
-      waveColor: `rgb(183, 104, 60)`,
-      progressColor: `rgb(174, 112, 45)`,
+      waveColor: `rgb(102, 204, 153)`,
+      progressColor: `rgb(64, 151, 112)`,
       barWidth: 5,
       barGap: 5,
       barRadius: 30,
@@ -133,16 +133,16 @@ export default function TimestampChart({
 
       dataToShow.forEach((region) => {
         const content = showCrackles
-          ? `Crackles: Yes (Confidence: ${(
+          ? `Crackles: Yes (${(
               region.crackles_confidence * 100
             ).toFixed(2)}%)`
-          : `Wheezes: Yes (Confidence: ${(
+          : `Wheezes: Yes (${(
               region.wheezes_confidence * 100
             ).toFixed(2)}%)`;
 
         const color = showCrackles
-          ? `rgb(191, 96, 77, 0.5)`
-          : `rgb(191, 96, 77, 0.5)`;
+          ? `rgb(102, 204, 153, 0.2)`
+          : `rgb(102, 204, 153, 0.2)`;
 
         createRegion(region.start_time, region.end_time, content, color);
       });
