@@ -65,9 +65,9 @@ export default function TimestampChart({
   const [showCrackles, setShowCrackles] = useState(true);
 
   // Log the regionsData to inspect its contents
-  useEffect(() => {
-    console.log("Regions Data:", regionsData);
-  }, [regionsData]);
+  // useEffect(() => {
+  //   console.log("Regions Data:", regionsData);
+  // }, [regionsData]);
 
   // Separate and combine regions based on crackles and wheezes
   const cracklesData = regionsData.filter((region) => region.crackles);

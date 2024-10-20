@@ -3,11 +3,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+
 import { supabase } from "@/utils/client";
 import { v4 as uuidv4 } from "uuid";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,18 +14,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Terminal } from "lucide-react";
-
-import useAudioStore from "@/components/store/audio-store";
-import useResultsStore from "@/components/store/results-store";
 
 import TimestampChart from "@/components/timestamp-chart";
 import ResultsTable from "@/components/results-table";
 import ResultsRatio from "@/components/results-ratio";
 import ResultsSummary from "@/components/results-summary";
 import SkeletonResults from "@/components/skeleton-results";
+
+import useAudioStore from "@/components/store/audio-store";
+import useResultsStore from "@/components/store/results-store";
 
 const useUserSession = () => {
   const [session, setSession] = useState(null);
@@ -46,9 +47,19 @@ const useUserSession = () => {
 };
 
 export default function Results() {
-  const { currentAudio, setCurrentAudio } = useAudioStore();
-  const { timestampResult, setTimestampResult, audioFile, setAudioFile } =
-    useResultsStore();
+  // const { currentAudioUrl, setCurrentAudio } = useAudioStore();
+  // const { timestampResult, setTimestampResult, audioFile, setAudioFile } =
+  //   useResultsStore();
+
+  const { audioUrl, setAudioUrl } = useAudioStore();
+  const {
+    currentAudioUrl,
+    setCurrentAudioUrl,
+    audioFile,
+    setAudioFile,
+    timestampResult,
+    setTimestampResult,
+  } = useResultsStore();
 
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -70,10 +81,13 @@ export default function Results() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`http://192.168.1.38:5000${endpoint}`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -149,22 +163,43 @@ export default function Results() {
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!currentAudio || timestampResult) {
+
+      if (timestampResult || !currentAudioUrl) {
+        console.log("Stopping early due to existing timestamp result or missing audio URL.");
+        console.log("audioUrl:", audioUrl);
+        console.log("currentAudioUrl:", currentAudioUrl);
+        console.log("audioFile:", audioFile);
+        console.log("timestampResult:", timestampResult);
         return;
       }
 
       try {
-        const response = await fetch(currentAudio);
-        const blob = await response.blob();
+        console.log("Fetching audio data...");
+        console.log("audioUrl:", audioUrl);
+        console.log("currentAudioUrl:", currentAudioUrl);
+        console.log("audioFile:", audioFile);
+        console.log("timestampResult:", timestampResult);
 
-        const fileName = currentAudio.split("/").pop() || "audiofile";
-        const fileType = blob.type || "audio/mpeg";
-        const file = new File([blob], fileName, { type: fileType });
+        // Fetch the audio file from the currentAudioUrl
+        const response = await fetch(currentAudioUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch audio file");
+        }
 
-        setAudioFile(file);
+        const audioBlob = await response.blob();
+        console.log("audioBlob:", audioBlob);
+        const filename = `audio_${Date.now()}.wav`;
+        const extractedAudioFile = new File([audioBlob], filename, {
+          type: "audio/wav",
+        });
 
-        const timestampData = await sendAudioToAPI(file, "/timestamp");
+        setAudioFile(extractedAudioFile); // Optionally set audioFile state
 
+        // Use the extractedAudioFile to send to API
+        const timestampData = await sendAudioToAPI(
+          extractedAudioFile,
+          "/timestamp"
+        );
         setTimestampResult(timestampData);
         setError(null);
       } catch (err) {
@@ -174,14 +209,14 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [currentAudio, timestampResult, setTimestampResult, setAudioFile]);
+  }, [timestampResult]); // Add timestampResult as a dependency
 
   return (
     <div className="flex flex-col space-y-4">
       <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
         Results Page
       </h1>
-      {currentAudio ? (
+      {currentAudioUrl ? (
         timestampResult ? (
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">

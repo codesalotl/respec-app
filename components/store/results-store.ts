@@ -5,17 +5,21 @@
 import { create } from 'zustand';
 
 interface ResultsState {
-  timestampResult: object | null;
-  setTimestampResult: (result: object | null) => void;
+  currentAudioUrl: string | null;
+  setCurrentAudioUrl: (audio: string | null) => void;
   audioFile: File | null;
   setAudioFile: (file: File | null) => void;
+  timestampResult: object | null;
+  setTimestampResult: (result: object | null) => void;
 }
 
 const useResultsStore = create<ResultsState>((set) => ({
-  timestampResult: null,
-  setTimestampResult: (result) => set({ timestampResult: result }),
+  currentAudioUrl: null,
+  setCurrentAudioUrl: (audio) => set({ currentAudioUrl: audio }),
   audioFile: null,
   setAudioFile: (file) => set({ audioFile: file }),
+  timestampResult: null,
+  setTimestampResult: (result) => set({ timestampResult: result })
 }));
 
 export default useResultsStore;

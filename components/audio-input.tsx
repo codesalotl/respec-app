@@ -3,6 +3,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+
+import WaveSurfer from "wavesurfer.js";
+import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
+import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
+import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
+import { getRgbFromCssVar } from "@/utils/color-conversions";
 
 import {
   Card,
@@ -12,156 +19,151 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
-
-import WaveSurfer from "wavesurfer.js";
-import TimelinePlugin from "wavesurfer.js/dist/plugins/timeline.esm.js";
-import Minimap from "wavesurfer.js/dist/plugins/minimap.esm.js";
-import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ChevronRight, Play, Pause, Rewind, FastForward } from "lucide-react";
 
 import useAudioStore from "@/components/store/audio-store";
 import useResultsStore from "@/components/store/results-store";
 
-import { useRouter } from "next/navigation";
-
 export default function AudioInput() {
   const router = useRouter();
 
-  const { audioSrc, setAudioSrc, setCurrentAudio } = useAudioStore();
-  const { setTimestampResult, setAudioFile } = useResultsStore();
+  const { audioUrl, setAudioUrl } = useAudioStore();
+  const {
+    currentAudioUrl,
+    setCurrentAudioUrl,
+    audioFile,
+    setAudioFile,
+    timestampResult,
+    setTimestampResult,
+  } = useResultsStore();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const waveformRef = useRef<HTMLDivElement | null>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const waveformRef1 = useRef<HTMLDivElement | null>(null);
+  const wavesurferRef1 = useRef<WaveSurfer | null>(null);
 
   useEffect(() => {
+    // console.log("running useEffect on wavesurfer");
+    if (!audioUrl || !waveformRef1.current) return;
+
+    if (wavesurferRef1.current) {
+      wavesurferRef1.current.destroy();
+    }
+
+    wavesurferRef1.current = WaveSurfer.create({
+      container: waveformRef1.current,
+      waveColor: getRgbFromCssVar("--chart-5"),
+      progressColor: getRgbFromCssVar("--chart-7"),
+      barWidth: 5,
+      barGap: 5,
+      barRadius: 30,
+      dragToSeek: true,
+      hideScrollbar: true,
+      url: audioUrl,
+      minPxPerSec: 10,
+      plugins: [
+        TimelinePlugin.create(),
+        Minimap.create({
+          height: 20,
+          waveColor: "#ddd",
+          progressColor: "#999",
+        }),
+        Hover.create({
+          lineColor: getRgbFromCssVar("--chart-5"),
+          lineWidth: 2,
+          labelBackground: getRgbFromCssVar("--chart-8"),
+          labelColor: "#fff",
+          labelSize: "11px",
+        }),
+      ],
+    });
+
+    wavesurferRef1.current.on("ready", () => {
+      setIsWaveSurferReady(true);
+    });
+
+    wavesurferRef1.current.on("interaction", () => {
+      wavesurferRef1.current?.play();
+      setIsPlaying(true);
+    });
+
+    wavesurferRef1.current.on("play", () => {
+      setIsPlaying(true);
+    });
+
+    wavesurferRef1.current.on("pause", () => {
+      setIsPlaying(false);
+    });
+
+    wavesurferRef1.current.on("finish", () => {
+      setIsPlaying(false);
+    });
+
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
-      if (audioSrc) {
-        URL.revokeObjectURL(audioSrc);
+      if (wavesurferRef1.current) {
+        wavesurferRef1.current.destroy();
+        wavesurferRef1.current = null;
       }
     };
-  }, [audioSrc]);
-
-  useEffect(() => {
-    if (audioSrc && waveformRef.current) {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-      }
-
-      // Reset states before loading the new audio
-      setIsWaveSurferReady(false);
-      setIsLoading(true);
-
-      wavesurferRef.current = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: `rgb(102, 204, 153)`,
-        progressColor: `rgb(64, 151, 112)`,
-        barWidth: 5,
-        barGap: 5,
-        barRadius: 30,
-        dragToSeek: true,
-        hideScrollbar: true,
-        url: audioSrc,
-        minPxPerSec: 10,
-        plugins: [
-          TimelinePlugin.create(),
-          Minimap.create({
-            height: 20,
-            waveColor: "#ddd",
-            progressColor: "#999",
-          }),
-          Hover.create({
-            lineColor: "#ff0000",
-            lineWidth: 2,
-            labelBackground: "#555",
-            labelColor: "#fff",
-            labelSize: "11px",
-          }),
-        ],
-      });
-
-      // Track the loading state
-      wavesurferRef.current.on("loading", (percent) => {
-        console.log("Loading", percent + "%");
-        if (percent === 100) {
-          setIsLoading(false); // Audio is fully loaded
-        }
-      });
-
-      wavesurferRef.current.on("interaction", () => {
-        wavesurferRef.current?.play();
-        setIsPlaying(true);
-      });
-
-      wavesurferRef.current.on("play", () => {
-        setIsPlaying(true);
-      });
-
-      wavesurferRef.current.on("pause", () => {
-        setIsPlaying(false);
-      });
-
-      wavesurferRef.current.on("finish", () => {
-        setIsPlaying(false);
-      });
-
-      wavesurferRef.current.on("ready", () => {
-        console.log("WaveSurfer is ready");
-        setIsWaveSurferReady(true);
-        setIsLoading(false); // Ensure loading is false after ready
-      });
-    }
-  }, [audioSrc]);
+  }, [audioUrl]);
 
   const handleAudioUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("audio/")) {
-      if (audioSrc) {
-        URL.revokeObjectURL(audioSrc);
+      const audioBlob = URL.createObjectURL(file);
+
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
       }
 
-      const audioUrl = URL.createObjectURL(file);
-      setAudioSrc(audioUrl);
-      // setAudioFile(file);
-      // console.log("Audio source set:", audioUrl);
+      setAudioUrl(audioBlob);
+
+      // console.log("audioBlob:", audioBlob);
+      // console.log("audioUrl:", audioUrl);
+      // console.log("currentAudioUrl:", currentAudioUrl);
+      // console.log("audioFile:", audioFile);
+      // console.log("timestampResult:", timestampResult);
     } else {
       alert("Please select a valid audio file.");
     }
   };
 
   const togglePlayPause = () => {
-    if (wavesurferRef.current) {
+    if (wavesurferRef1.current) {
       if (isPlaying) {
-        wavesurferRef.current.pause();
+        wavesurferRef1.current.pause();
       } else {
-        wavesurferRef.current.play();
+        wavesurferRef1.current.play();
       }
     }
   };
 
   const skip = (seconds: number) => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.skip(seconds);
+    if (wavesurferRef1.current) {
+      wavesurferRef1.current.skip(seconds);
     }
   };
 
-  const handleResultsRedirect = () => {
-    if (isWaveSurferReady) {
-      setCurrentAudio(audioSrc);
-      setTimestampResult(null);
+  // useEffect(() => {
+  //   console.log("after:", isPlaying);
+  // }, [isPlaying]);
 
-      router.push("/results");
-    }
+  const handleResultsRedirect = () => {
+    // console.log("after submit - before redirect");
+    // console.log("audioUrl:", audioUrl);
+    // console.log("currentAudioUrl:", currentAudioUrl);
+    // console.log("audioFile:", audioFile);
+    // console.log("timestampResult:", timestampResult);
+
+    setCurrentAudioUrl(audioUrl);
+    setAudioFile(null);
+    setTimestampResult(null);
+
+    router.push("/results");
   };
 
   return (
@@ -170,9 +172,7 @@ export default function AudioInput() {
       <div>
         <Label htmlFor="audio">Audio</Label>
         <div className="flex flex-row space-x-4">
-          <div>
-            <Input type="file" accept="audio/*" onChange={handleAudioUpload} />
-          </div>
+          <Input type="file" accept="audio/*" onChange={handleAudioUpload} />
           <Button
             size="icon"
             onClick={handleResultsRedirect}
@@ -183,8 +183,8 @@ export default function AudioInput() {
         </div>
 
         <div className="mt-4 h-[10.5rem]">
-          {audioSrc ? (
-            <div ref={waveformRef} id="waveform"></div>
+          {audioUrl ? (
+            <div ref={waveformRef1} id="waveform" />
           ) : (
             <Card className="flex items-center justify-center h-[10.5rem]">
               <h2 className="text-center">Please upload an audio file.</h2>

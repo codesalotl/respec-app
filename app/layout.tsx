@@ -36,7 +36,7 @@ export default function RootLayout({
               <AudioInput />
             </div>
           </div>
-          <div className="relative z-10 mt-[25rem] min-h-[100vh] p-5 bg-background">
+          <div className="relative z-10 mt-[100vh] min-h-[100vh] p-5 bg-background"> {/*25rem*/}
             {children}
           </div>
           <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
