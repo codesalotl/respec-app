@@ -7,6 +7,8 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/utils/client";
 import { v4 as uuidv4 } from "uuid";
 
+import { sendAudioToAPI } from "@/utils/audio-to-api";
+
 import {
   Dialog,
   DialogContent,
@@ -47,9 +49,7 @@ const useUserSession = () => {
 };
 
 export default function Results() {
-  // const { currentAudioUrl, setCurrentAudio } = useAudioStore();
-  // const { timestampResult, setTimestampResult, audioFile, setAudioFile } =
-  //   useResultsStore();
+  const session = useUserSession();
 
   const { audioUrl, setAudioUrl } = useAudioStore();
   const {
@@ -73,33 +73,6 @@ export default function Results() {
   const addressRef = useRef<HTMLInputElement>(null);
   const citizenshipRef = useRef<HTMLInputElement>(null);
   const civilStatusRef = useRef<HTMLInputElement>(null);
-
-  const session = useUserSession();
-
-  const sendAudioToAPI = async (file: File, endpoint: string): Promise<any> => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        return result;
-      } else {
-        throw new Error(`Failed to upload audio to ${endpoint}`);
-      }
-    } catch (error) {
-      console.error(error);
-      throw new Error(`Error uploading audio to ${endpoint}`);
-    }
-  };
 
   const saveResultsToDatabase = async () => {
     if (!timestampResult) {
@@ -162,24 +135,14 @@ export default function Results() {
   };
 
   useEffect(() => {
-    const fetchResults = async () => {
+    console.log("running useEffect on page load");
 
-      if (timestampResult || !currentAudioUrl) {
-        console.log("Stopping early due to existing timestamp result or missing audio URL.");
-        console.log("audioUrl:", audioUrl);
-        console.log("currentAudioUrl:", currentAudioUrl);
-        console.log("audioFile:", audioFile);
-        console.log("timestampResult:", timestampResult);
-        return;
-      }
+    if (!currentAudioUrl || timestampResult) return;
+
+    const fetchResults = async () => {
+      console.log("running fetchResults");
 
       try {
-        console.log("Fetching audio data...");
-        console.log("audioUrl:", audioUrl);
-        console.log("currentAudioUrl:", currentAudioUrl);
-        console.log("audioFile:", audioFile);
-        console.log("timestampResult:", timestampResult);
-
         // Fetch the audio file from the currentAudioUrl
         const response = await fetch(currentAudioUrl);
         if (!response.ok) {
@@ -187,7 +150,7 @@ export default function Results() {
         }
 
         const audioBlob = await response.blob();
-        console.log("audioBlob:", audioBlob);
+        // console.log("audioBlob:", audioBlob);
         const filename = `audio_${Date.now()}.wav`;
         const extractedAudioFile = new File([audioBlob], filename, {
           type: "audio/wav",
@@ -200,6 +163,7 @@ export default function Results() {
           extractedAudioFile,
           "/timestamp"
         );
+
         setTimestampResult(timestampData);
         setError(null);
       } catch (err) {
@@ -209,7 +173,7 @@ export default function Results() {
     };
 
     fetchResults();
-  }, [timestampResult]); // Add timestampResult as a dependency
+  }, [currentAudioUrl, timestampResult]);
 
   return (
     <div className="flex flex-col space-y-4">

@@ -48,7 +48,10 @@ export default function AudioInput() {
 
   useEffect(() => {
     // console.log("running useEffect on wavesurfer");
+
     if (!audioUrl || !waveformRef1.current) return;
+
+    // console.log("passed the first check");
 
     if (wavesurferRef1.current) {
       wavesurferRef1.current.destroy();
